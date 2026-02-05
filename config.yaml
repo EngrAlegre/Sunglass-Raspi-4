@@ -1,0 +1,69 @@
+simulation_mode: false
+
+loop_hz: 8
+
+pins:
+  i2c_sda_gpio: 2
+  i2c_scl_gpio: 3
+  xshut_left_gpio: 5
+  xshut_center_gpio: 6
+  xshut_right_gpio: 13
+  motor_left_gpio: 17
+  motor_center_gpio: 27
+  motor_right_gpio: 22
+  button1_gpio: 23
+  button2_gpio: 24
+  button3_gpio: 25
+  gps_uart_rx_gpio: 15
+  gps_uart_tx_gpio: 14
+
+tof:
+  i2c_bus: 1
+  addresses:
+    left: 0x30
+    center: 0x31
+    right: 0x32
+  distance_mode: long
+  timing_budget_ms: 50
+  inter_measurement_ms: 60
+  median_window: 5
+  hysteresis_cm: 4
+
+sensitivity_presets:
+  near:
+    thresholds_cm: [15, 35, 70]
+  normal:
+    thresholds_cm: [20, 50, 100]
+  far:
+    thresholds_cm: [30, 70, 140]
+
+haptics:
+  continuous:
+    on_s: 1.0
+    off_s: 0.0
+  fast:
+    on_s: 0.08
+    off_s: 0.12
+  slow:
+    on_s: 0.20
+    off_s: 0.40
+
+audio:
+  enabled: true
+  default_playback_source: ""
+  playback_backend_preference: ["cvlc", "mpg123"]
+  tone_volume: 0.35
+
+gps:
+  enabled: true
+  log_interval_s: 5
+  gpsd_host: "127.0.0.1"
+  gpsd_port: 2947
+  serial_device_candidates: ["/dev/serial0", "/dev/ttyAMA0", "/dev/ttyS0", "/dev/ttyUSB0"]
+  serial_baud: 9600
+
+logging:
+  level: INFO
+  file: logs/app.log
+  max_bytes: 1000000
+  backup_count: 5
