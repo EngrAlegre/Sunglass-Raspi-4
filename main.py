@@ -153,8 +153,19 @@ def run(config_path: str, once: bool) -> int:
     channel_states: Dict[str, ChannelState] = {"left": ChannelState(), "center": ChannelState(), "right": ChannelState()}
 
     if once:
+        deadline = time.monotonic() + 1.5
         reading = tof.read()
-        logger.info("Distances (cm): left=%s center=%s right=%s", reading.left_cm, reading.center_cm, reading.right_cm)
+        while time.monotonic() < deadline:
+            if reading.left_cm is not None and reading.center_cm is not None and reading.right_cm is not None:
+                break
+            time.sleep(0.05)
+            reading = tof.read()
+        logger.info(
+            "Distances (cm): left=%s center=%s right=%s",
+            reading.left_cm,
+            reading.center_cm,
+            reading.right_cm,
+        )
         stop["flag"] = True
 
     target_dt = 1.0 / float(cfg.loop_hz)
