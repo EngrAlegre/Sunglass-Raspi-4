@@ -23,18 +23,26 @@ class Audio:
         enabled: bool,
         tone_volume: float = 0.35,
         playback_backend_preference: Optional[List[str]] = None,
+        speech_enabled: bool = False,
+        speech_voice: str = "",
+        speech_rate_wpm: int = 170,
     ) -> None:
         self._enabled = bool(enabled)
         self._tone_volume = float(tone_volume)
         self._backend_preference = playback_backend_preference or ["cvlc", "mpg123"]
+        self._speech_enabled = bool(speech_enabled)
+        self._speech_voice = (speech_voice or "").strip()
+        self._speech_rate_wpm = int(speech_rate_wpm)
         self._tone_cache: Dict[Tuple[int, int, int], str] = {}
         self._tone_process: Optional[subprocess.Popen] = None
         self._playback_process: Optional[subprocess.Popen] = None
+        self._speech_process: Optional[subprocess.Popen] = None
         self._lock = threading.Lock()
 
     def close(self) -> None:
         self.stop_tone()
         self.stop_playback()
+        self.stop_speech()
 
     def stop_tone(self) -> None:
         with self._lock:
@@ -50,6 +58,16 @@ class Audio:
         with self._lock:
             p = self._playback_process
             self._playback_process = None
+        if p is not None:
+            try:
+                p.terminate()
+            except Exception:
+                pass
+
+    def stop_speech(self) -> None:
+        with self._lock:
+            p = self._speech_process
+            self._speech_process = None
         if p is not None:
             try:
                 p.terminate()
@@ -110,6 +128,37 @@ class Audio:
         if spec is None:
             return
         self.play_tone(spec.freq_hz, spec.duration_s)
+
+    def speak(self, text: str, blocking: bool = False) -> bool:
+        if not self._enabled or not self._speech_enabled:
+            return False
+        text = (text or "").strip()
+        if not text:
+            return False
+        espeak = shutil.which("espeak") or shutil.which("espeak-ng")
+        if espeak is None:
+            return False
+        args = [espeak, "-s", str(int(self._speech_rate_wpm))]
+        if self._speech_voice:
+            args += ["-v", self._speech_voice]
+        args.append(text)
+
+        if blocking:
+            self.stop_speech()
+            try:
+                subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+            except Exception:
+                return False
+            return True
+
+        self.stop_speech()
+        try:
+            p = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            return False
+        with self._lock:
+            self._speech_process = p
+        return True
 
     def start_playback(self, source: str) -> bool:
         if not self._enabled:

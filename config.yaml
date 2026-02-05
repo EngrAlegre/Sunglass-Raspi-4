@@ -53,6 +53,15 @@ audio:
   default_playback_source: ""
   playback_backend_preference: ["cvlc", "mpg123"]
   tone_volume: 0.35
+  speech_enabled: true
+  speech_voice: ""
+  speech_rate_wpm: 170
+  announce_weather: true
+  announce_location: true
+  weather_interval_s: 1800
+  location_interval_s: 600
+  obstacle_audio_alerts: true
+  obstacle_audio_min_interval_s: 1.0
 
 gps:
   enabled: true

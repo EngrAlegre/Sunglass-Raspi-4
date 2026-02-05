@@ -34,6 +34,12 @@ class GPSLogger:
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self._mode: Optional[str] = None
+        self._latest_fix: Optional[GPSFix] = None
+        self._latest_fix_lock = threading.Lock()
+
+    def get_latest_fix(self) -> Optional[GPSFix]:
+        with self._latest_fix_lock:
+            return self._latest_fix
 
     def start(self) -> None:
         if not self._cfg.enabled:
@@ -84,6 +90,8 @@ class GPSLogger:
                     warned = True
                 continue
             warned = False
+            with self._latest_fix_lock:
+                self._latest_fix = fix
             try:
                 self._append_fix(fix)
             except Exception:

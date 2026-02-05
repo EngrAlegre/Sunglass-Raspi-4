@@ -66,6 +66,15 @@ class AudioConfig:
         default_factory=lambda: ["cvlc", "mpg123"]
     )
     tone_volume: float = 0.35
+    speech_enabled: bool = False
+    speech_voice: str = ""
+    speech_rate_wpm: int = 170
+    announce_weather: bool = False
+    announce_location: bool = False
+    weather_interval_s: int = 1800
+    location_interval_s: int = 600
+    obstacle_audio_alerts: bool = False
+    obstacle_audio_min_interval_s: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -285,9 +294,30 @@ def load_config(path: str = "config.yaml") -> AppConfig:
         ),
         playback_backend_preference=list(audio_raw.get("playback_backend_preference", ["cvlc", "mpg123"])),
         tone_volume=_require_float(audio_raw.get("tone_volume", 0.35), "audio.tone_volume"),
+        speech_enabled=_require_bool(audio_raw.get("speech_enabled", False), "audio.speech_enabled"),
+        speech_voice=_require_str(audio_raw.get("speech_voice", ""), "audio.speech_voice"),
+        speech_rate_wpm=_require_int(audio_raw.get("speech_rate_wpm", 170), "audio.speech_rate_wpm"),
+        announce_weather=_require_bool(audio_raw.get("announce_weather", False), "audio.announce_weather"),
+        announce_location=_require_bool(audio_raw.get("announce_location", False), "audio.announce_location"),
+        weather_interval_s=_require_int(audio_raw.get("weather_interval_s", 1800), "audio.weather_interval_s"),
+        location_interval_s=_require_int(audio_raw.get("location_interval_s", 600), "audio.location_interval_s"),
+        obstacle_audio_alerts=_require_bool(
+            audio_raw.get("obstacle_audio_alerts", False), "audio.obstacle_audio_alerts"
+        ),
+        obstacle_audio_min_interval_s=_require_float(
+            audio_raw.get("obstacle_audio_min_interval_s", 1.0), "audio.obstacle_audio_min_interval_s"
+        ),
     )
     if not (0.0 <= audio.tone_volume <= 1.0):
         raise ValueError("audio.tone_volume must be between 0.0 and 1.0")
+    if audio.speech_rate_wpm < 80 or audio.speech_rate_wpm > 450:
+        raise ValueError("audio.speech_rate_wpm must be between 80 and 450")
+    if audio.weather_interval_s < 60:
+        raise ValueError("audio.weather_interval_s must be >= 60")
+    if audio.location_interval_s < 60:
+        raise ValueError("audio.location_interval_s must be >= 60")
+    if audio.obstacle_audio_min_interval_s < 0:
+        raise ValueError("audio.obstacle_audio_min_interval_s must be >= 0")
 
     gps_raw = raw.get("gps", {})
     if not isinstance(gps_raw, dict):
