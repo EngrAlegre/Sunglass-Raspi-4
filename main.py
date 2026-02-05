@@ -359,25 +359,28 @@ def run(config_path: str, once: bool) -> int:
                         reading.right_cm, thresholds, cfg.tof.hysteresis_cm, channel_states["right"].zone
                     ),
                 }
-                audio_alert_candidates: list[str] = []
+                audio_alert_candidates: list[tuple[str, int]] = []
                 for ch, z in zones.items():
-                    prev_zone = channel_states[ch].zone
                     channel_states[ch].zone = z
                     haptics.set_pattern(ch, _pattern_for_zone(z))
                     if (
                         audio_enabled
                         and cfg.audio.obstacle_audio_alerts
-                        and z == 3
-                        and prev_zone != 3
-                        and (now - channel_states[ch].last_obstacle_tone_at) >= float(cfg.audio.obstacle_audio_min_interval_s)
+                        and z >= 1
                     ):
-                        audio_alert_candidates.append(ch)
+                        base = float(cfg.audio.obstacle_audio_min_interval_s)
+                        interval = base * (4.0 - float(z))
+                        if interval <= 0:
+                            interval = 0.0
+                        if (now - channel_states[ch].last_obstacle_tone_at) >= interval:
+                            audio_alert_candidates.append((ch, z))
 
                 if audio_alert_candidates:
                     priority = {"center": 0, "left": 1, "right": 2}
-                    ch = sorted(audio_alert_candidates, key=lambda x: priority.get(x, 99))[0]
+                    ch, z = sorted(audio_alert_candidates, key=lambda x: (-x[1], priority.get(x[0], 99)))[0]
                     freq_map = {"left": 1200, "center": 1600, "right": 2000}
-                    audio.play_tone(freq_map.get(ch, 1500), 0.06)
+                    dur_map = {1: 0.05, 2: 0.07, 3: 0.10}
+                    audio.play_tone(freq_map.get(ch, 1500), float(dur_map.get(int(z), 0.07)))
                     channel_states[ch].last_obstacle_tone_at = now
             else:
                 haptics.all_off()

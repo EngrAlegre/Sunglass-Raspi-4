@@ -103,14 +103,21 @@ class Audio:
     def play_tone(self, freq_hz: int, duration_s: float) -> None:
         if not self._enabled:
             return
-        aplay = shutil.which("aplay")
-        if aplay is None:
+        player: Optional[List[str]] = None
+        paplay = shutil.which("paplay")
+        if paplay is not None:
+            player = [paplay]
+        else:
+            aplay = shutil.which("aplay")
+            if aplay is not None:
+                player = [aplay, "-q"]
+        if player is None:
             return
         duration_ms = int(max(10.0, duration_s * 1000.0))
         volume_milli = int(max(0.0, min(1.0, self._tone_volume)) * 1000)
         path = self._tone_path(freq_hz=freq_hz, duration_ms=duration_ms, volume_milli=volume_milli)
         self.stop_tone()
-        p = subprocess.Popen([aplay, "-q", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        p = subprocess.Popen([*player, path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         with self._lock:
             self._tone_process = p
 
