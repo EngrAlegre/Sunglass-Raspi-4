@@ -1,6 +1,0 @@
-PyYAML>=6.0
-adafruit-blinka>=8.0.0
-adafruit-circuitpython-vl53l1x>=1.2.0
-RPi.GPIO>=0.7.1
-pyserial>=3.5
-pynmea2>=1.19.0
